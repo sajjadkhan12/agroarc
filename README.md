@@ -1,2 +1,2 @@
 # agroarc_fyp
-Final Year Project - Agro
+Final Year Project - AgroArc
