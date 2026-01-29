@@ -59,6 +59,14 @@ htmlcov/
 # API keys and secrets
 secrets.json
 credentials.json
+.env
+.env.local
+.env.*.local
+.env.prod
+*.pem
+*.key
+private/
+config.json
 
 # OS
 Thumbs.db
