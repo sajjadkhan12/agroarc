@@ -10,6 +10,10 @@ import logging
 # Import all route modules
 from .routes import crop, fertilizer, weather
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette import status
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,6 +45,19 @@ app.include_router(crop.router)  # Crop recommendation endpoints
 app.include_router(fertilizer.router)  # Fertilizer recommendation endpoints
 app.include_router(weather.router)  # Weather advisory endpoints
 
+
+# Exception handler for validation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """Log detailed validation errors for debugging"""
+    logger.error(f"Validation error on {request.url.path}: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": exc.errors(),
+            "body": exc.body if hasattr(exc, 'body') else None
+        }
+    )
 
 # Root health check endpoint
 @app.get("/", tags=["Health"])

@@ -1,0 +1,7 @@
+{
+  "name": "AgroArc – Smart Agriculture Decision Support System",
+  "description": "A production-quality decision support system for agriculture, featuring crop prediction, fertilizer recommendation, and weather advisory tools.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
