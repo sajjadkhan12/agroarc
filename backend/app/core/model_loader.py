@@ -45,62 +45,60 @@ def get_models_dir() -> Path:
 
 def load_crop_assets() -> Tuple:
     """
-    Load crop recommendation model and label encoder from /models
-    
+    Load crop recommendation model, label encoder, and feature scaler from /models
+
     Expected files:
     - models/crop_recommendation_model.pkl (trained RandomForest model)
     - models/crop_label_encoder.pkl (LabelEncoder for crop names)
-    
+    - models/crop_feature_scaler.pkl (StandardScaler used during training; optional but strongly recommended)
+
     Returns:
-        Tuple[model, encoder]: (crop_model, crop_label_encoder)
-    
-    Raises:
-        FileNotFoundError: If pickle files not found in /models
-        Exception: If joblib fails to load files
+        Tuple[model, encoder, scaler]: (crop_model, crop_label_encoder, crop_feature_scaler)
+        scaler will be None if file is missing.
     """
     models_dir = get_models_dir()
-    
-    # Define exact paths to crop model files
+
     crop_model_path = models_dir / "crop_recommendation_model.pkl"
     crop_encoder_path = models_dir / "crop_label_encoder.pkl"
-    
-    # Validate crop model file exists
+    crop_scaler_path = models_dir / "crop_feature_scaler.pkl"
+
     if not crop_model_path.exists():
         raise FileNotFoundError(
             f"\n{'='*70}\n"
             f"❌ CROP MODEL FILE NOT FOUND\n"
             f"{'='*70}\n"
             f"Expected location: {crop_model_path}\n"
-            f"File name: crop_recommendation_model.pkl\n"
-            f"Models directory: {models_dir}\n"
-            f"Verify /models folder exists and contains the .pkl file\n"
             f"{'='*70}"
         )
-    
-    # Validate crop encoder file exists
+
     if not crop_encoder_path.exists():
         raise FileNotFoundError(
             f"\n{'='*70}\n"
             f"❌ CROP ENCODER FILE NOT FOUND\n"
             f"{'='*70}\n"
             f"Expected location: {crop_encoder_path}\n"
-            f"File name: crop_label_encoder.pkl\n"
-            f"Models directory: {models_dir}\n"
-            f"Verify /models folder exists and contains the .pkl file\n"
             f"{'='*70}"
         )
-    
+
     try:
-        # Load crop model using joblib
         crop_model = joblib.load(crop_model_path)
         logger.info(f"✓ Loaded crop model: {crop_model_path.name}")
-        
-        # Load crop label encoder using joblib
+
         crop_label_encoder = joblib.load(crop_encoder_path)
         logger.info(f"✓ Loaded crop encoder: {crop_encoder_path.name}")
-        
-        return crop_model, crop_label_encoder
-        
+
+        crop_feature_scaler = None
+        if crop_scaler_path.exists():
+            crop_feature_scaler = joblib.load(crop_scaler_path)
+            logger.info(f"✓ Loaded crop scaler: {crop_scaler_path.name}")
+        else:
+            logger.warning(
+                f"⚠ Crop feature scaler not found at {crop_scaler_path}. "
+                "Predictions will use raw, unscaled features which may produce constant outputs."
+            )
+
+        return crop_model, crop_label_encoder, crop_feature_scaler
+
     except Exception as e:
         raise Exception(
             f"\n{'='*70}\n"
@@ -108,7 +106,6 @@ def load_crop_assets() -> Tuple:
             f"{'='*70}\n"
             f"Error: {str(e)}\n"
             f"Models directory: {models_dir}\n"
-            f"Ensure files are valid pickle files (.pkl)\n"
             f"{'='*70}"
         )
 

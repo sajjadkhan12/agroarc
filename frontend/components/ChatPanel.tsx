@@ -4,11 +4,12 @@ import { Send, Terminal, HelpCircle } from 'lucide-react';
 import { ChatMessage } from '../types';
 
 interface ChatPanelProps {
-  onCommand: (command: string, params: Record<string, string>) => void;
+  onCommand: (command: string, params: Record<string, string>, rawInput: string) => void;
   messages: ChatMessage[];
+  isLoading?: boolean;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages, isLoading = false }) => {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -20,7 +21,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
     const parts = input.trim().split(/\s+/);
     const cmd = parts[0].toLowerCase();
@@ -31,7 +32,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => 
       if (key && val) params[key] = val;
     });
 
-    onCommand(cmd, params);
+    onCommand(cmd, params, input.trim());
     setInput('');
   };
 
@@ -49,6 +50,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => 
             <p>• crop N=90 P=42 K=43 temp=25 humidity=80 ph=6.5 rainfall=200</p>
             <p className="mt-1">• weather city=London</p>
             <p className="mt-1">• fertilizer temp=26 humidity=70 moisture=40 soil=Sandy crop=Wheat N=20 P=10 K=15</p>
+            <p className="mt-2 text-indigo-300">• Or type normal text for general AI chat</p>
           </div>
         </div>
       </div>
@@ -68,6 +70,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => 
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] p-3 rounded-2xl text-sm bg-slate-800 text-slate-300 border border-slate-700 rounded-tl-none font-mono">
+              Thinking...
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 border-t border-slate-800 bg-slate-900/50">
@@ -76,12 +85,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onCommand, messages }) => 
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a command... (e.g. weather city=Islamabad)"
+            placeholder="Type command or ask anything..."
+            disabled={isLoading}
             className="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-4 pr-12 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           />
           <button 
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
             className="absolute right-2 top-1.5 p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-md transition-all shadow-lg"
           >
             <Send className="w-4 h-4" />

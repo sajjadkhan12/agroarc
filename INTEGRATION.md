@@ -20,6 +20,7 @@ Port: 3000                  Port: 8000
 Located at: `backend/.env`
 ```env
 OPENWEATHER_API_KEY=your_openweather_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 DEBUG=True
 DATABASE_URL=sqlite:///./agroarc.db
 ```
@@ -28,7 +29,6 @@ DATABASE_URL=sqlite:///./agroarc.db
 Located at: `frontend/.env.local`
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000
-GEMINI_API_KEY=PLACEHOLDER_API_KEY
 ```
 
 ## API Endpoints Mapping

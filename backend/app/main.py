@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 # Import all route modules
-from .routes import crop, fertilizer, weather
+from .routes import crop, fertilizer, weather, chat
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -44,6 +44,7 @@ app.add_middleware(
 app.include_router(crop.router)  # Crop recommendation endpoints
 app.include_router(fertilizer.router)  # Fertilizer recommendation endpoints
 app.include_router(weather.router)  # Weather advisory endpoints
+app.include_router(chat.router)  # General chat endpoint
 
 
 # Exception handler for validation errors
@@ -82,6 +83,7 @@ async def root() -> dict:
         "endpoints": {
             "crop_recommendation": "/api/v1/crop",
             "fertilizer_recommendation": "/api/v1/fertilizer",
-            "weather_advisory": "/api/v1/weather"
+            "weather_advisory": "/api/v1/weather",
+            "general_chat": "/chat"
         }
     }

@@ -194,8 +194,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleChatCommand = async (cmd: string, params: Record<string, string>) => {
-    addChatMessage('user', `${cmd} ${Object.entries(params).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+  const handleChatCommand = async (cmd: string, params: Record<string, string>, rawInput: string) => {
+    addChatMessage('user', rawInput);
 
     if (cmd === 'weather') {
       if (!params.city) {
@@ -248,7 +248,9 @@ const App: React.FC = () => {
       else addChatMessage('system', `API Error: ${res.error}`);
     }
     else {
-      addChatMessage('system', `Unknown command: ${cmd}. Available commands: crop, weather, fertilizer.`);
+      const res = await wrapApiCall(api.generalChat(rawInput));
+      if (res.status === 200) addChatMessage('system', `${res.data.reply}`);
+      else addChatMessage('system', `AI Chat Error: ${res.error || 'Failed to get AI response'}`);
     }
   };
 
@@ -325,7 +327,7 @@ const App: React.FC = () => {
               </div>
               <button 
                 type="button" 
-                onClick={handleLoadCategories}
+                onClick={() => { void handleLoadCategories(); }}
                 className="text-xs font-semibold flex items-center gap-1 text-amber-700 hover:text-amber-900 bg-white/50 px-2 py-1 rounded border border-amber-200"
               >
                 <RefreshCcw className="w-3 h-3" /> Load Dropdowns
@@ -386,6 +388,7 @@ const App: React.FC = () => {
           <ChatPanel 
             onCommand={handleChatCommand} 
             messages={chatMessages} 
+            isLoading={loading}
           />
           <div className="lg:sticky lg:top-[88px]">
             <ResponsePanel response={lastResponse} />

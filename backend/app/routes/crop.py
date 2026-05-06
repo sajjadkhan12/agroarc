@@ -22,15 +22,16 @@ router = APIRouter(
     tags=["Crop Recommendation"]
 )
 
-# Load crop model and encoder once at startup (module-level import)
+# Load crop model, encoder, and scaler once at startup (module-level import)
 # This ensures models are loaded only once when the application starts
 try:
-    crop_model, crop_label_encoder = load_crop_assets()
+    crop_model, crop_label_encoder, crop_feature_scaler = load_crop_assets()
     logger.info("✓ Crop assets loaded successfully at startup")
 except Exception as e:
     logger.error(f"❌ Failed to load crop assets: {str(e)}")
     crop_model = None
     crop_label_encoder = None
+    crop_feature_scaler = None
 
 
 @router.post(
@@ -91,17 +92,26 @@ async def predict_crop(request: CropRequest) -> CropResponse:
         # Step 2: Create pandas DataFrame with exact feature names and order
         # This matches the training data structure
         df = pd.DataFrame([features_dict])
-        
+
         logger.debug(f"Input features: {features_dict}")
         logger.debug(f"DataFrame columns: {df.columns.tolist()}")
-        
+
+        # Step 2b: Apply the exact StandardScaler that was fit during training.
+        # The model was trained on scaled inputs; feeding raw values causes
+        # the model to collapse to a single class for every request.
+        if crop_feature_scaler is not None:
+            model_input = crop_feature_scaler.transform(df)
+        else:
+            logger.warning("Crop scaler not loaded; predicting on raw features.")
+            model_input = df
+
         # Step 3: Make prediction using the pre-trained model
         # Returns array of predicted class (encoded integer)
-        prediction_encoded = crop_model.predict(df)[0]
-        
+        prediction_encoded = crop_model.predict(model_input)[0]
+
         # Step 4: Get prediction probabilities for confidence score
         # predict_proba returns probabilities for all classes
-        prediction_proba = crop_model.predict_proba(df)[0]
+        prediction_proba = crop_model.predict_proba(model_input)[0]
         
         # Get the highest probability (confidence) and convert to percentage
         confidence = float(max(prediction_proba)) * 100
@@ -200,14 +210,16 @@ async def crop_health() -> dict:
     - models_loaded: Boolean indicating if crop model and encoder are ready
     """
     
-    # Check if both model and encoder are loaded
+    # Check if model, encoder, and scaler are loaded
     models_loaded = crop_model is not None and crop_label_encoder is not None
-    
+    scaler_loaded = crop_feature_scaler is not None
+
     status_msg = "healthy" if models_loaded else "unhealthy"
-    
+
     return {
         "status": status_msg,
         "models_loaded": models_loaded,
+        "scaler_loaded": scaler_loaded,
         "service": "crop_recommendation"
     }
 

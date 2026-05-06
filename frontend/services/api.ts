@@ -81,4 +81,18 @@ export class ApiService {
       return { status: 0, data: null, requestPayload: { city }, error: err.message, timestamp: new Date().toLocaleTimeString() };
     }
   }
+
+  async generalChat(message: string): Promise<ApiResponseData> {
+    const payload = { message };
+    try {
+      const response = await fetch(`${this.baseUrl}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return this.handleResponse(response, payload);
+    } catch (err: any) {
+      return { status: 0, data: null, requestPayload: payload, error: err.message, timestamp: new Date().toLocaleTimeString() };
+    }
+  }
 }
