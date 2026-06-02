@@ -1,0 +1,48 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "models/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "models/**"
+      - "tests/**"
+      - "requirements.txt"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  test:
+    name: Lint + smoke test FastAPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Lint (real bug rules only)
+        run: ruff check --select=E9,F63,F7,F82 backend/
+
+      - name: Smoke test (load models, register routes, hit /health)
+        env:
+          PYTHONPATH: .
+        run: pytest tests/ -v

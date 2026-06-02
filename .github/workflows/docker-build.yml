@@ -1,0 +1,107 @@
+name: Docker build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "models/**"
+      - "requirements.txt"
+      - "backend/Dockerfile"
+      - "frontend/Dockerfile"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "frontend/.dockerignore"
+      - ".github/workflows/docker-build.yml"
+  pull_request:
+    paths:
+      - "backend/Dockerfile"
+      - "frontend/Dockerfile"
+      - "requirements.txt"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".dockerignore"
+      - "frontend/.dockerignore"
+      - ".github/workflows/docker-build.yml"
+
+jobs:
+  backend-image:
+    name: Build backend image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: agroarc-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Verify image starts and serves /
+        run: |
+          docker run -d --name agroarc-backend-ci -p 8000:8000 agroarc-backend:ci
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/ > /dev/null; then
+              echo "Backend responded on attempt $i"
+              curl -s http://127.0.0.1:8000/ | head -c 500
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not respond in time"
+          docker logs agroarc-backend-ci
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f agroarc-backend-ci || true
+
+  frontend-image:
+    name: Build frontend image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: frontend/Dockerfile
+          push: false
+          load: true
+          tags: agroarc-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Verify image starts and serves /
+        run: |
+          docker run -d --name agroarc-frontend-ci -p 3000:80 agroarc-frontend:ci
+          for i in {1..15}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/ || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "Frontend responded with 200 on attempt $i"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Frontend did not respond with 200 in time"
+          docker logs agroarc-frontend-ci
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f agroarc-frontend-ci || true

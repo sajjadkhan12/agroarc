@@ -1,0 +1,64 @@
+# Keep build context small and reproducible.
+# Used when building the backend image (context = project root).
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.pytest_cache
+.coverage
+htmlcov
+
+# Virtual environments
+venv
+.venv
+env
+ENV
+
+# Editor / OS
+.vscode
+.idea
+.cursor
+.codex
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Secrets & local config — NEVER bake into images
+.env
+.env.local
+.env.*.local
+.env.prod
+backend/.env
+backend/.env.local
+secrets.json
+credentials.json
+*.pem
+*.key
+
+# Logs
+*.log
+backend/uvicorn.*.log
+
+# Frontend (built separately)
+frontend/node_modules
+frontend/dist
+frontend
+
+# Notebooks & docs (not needed at runtime)
+notebooks
+*.md
+agent-transcripts
+terminals
+
+# CI / metadata
+.github
+LICENSE
