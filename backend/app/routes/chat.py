@@ -6,14 +6,11 @@ Gemini-powered conversational endpoint for AgroArc Command Tester.
 from fastapi import APIRouter
 import os
 import logging
-from dotenv import load_dotenv
 import google.generativeai as genai
 
 from ..core.schemas import GeneralChatRequest, GeneralChatResponse
 
 logger = logging.getLogger(__name__)
-
-load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")

@@ -15,10 +15,8 @@ __pycache__
 .pytest_cache
 .coverage
 htmlcov
-
-# Virtual environments
-venv
 .venv
+venv
 env
 ENV
 
@@ -49,15 +47,22 @@ credentials.json
 backend/uvicorn.*.log
 
 # Frontend (built separately)
-frontend/node_modules
-frontend/dist
 frontend
 
-# Notebooks & docs (not needed at runtime)
+# Not needed at runtime
 notebooks
+data
+tests
+scripts
 *.md
 agent-transcripts
 terminals
+
+# Backend extras (only backend/app is copied in Dockerfile)
+backend/run.py
+backend/.env.example
+backend/models
+backend/Dockerfile
 
 # CI / metadata
 .github

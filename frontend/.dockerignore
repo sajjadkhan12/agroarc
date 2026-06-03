@@ -11,5 +11,6 @@ Thumbs.db
 .vscode
 .idea
 README.md
+metadata.json
 Dockerfile
 .dockerignore

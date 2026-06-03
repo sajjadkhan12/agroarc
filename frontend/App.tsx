@@ -21,9 +21,12 @@ import {
 import { ResponsePanel } from './components/ResponsePanel';
 import { ChatPanel } from './components/ChatPanel';
 
+const DEFAULT_API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 const App: React.FC = () => {
   // Global States
-  const [baseUrl, setBaseUrl] = useState('http://127.0.0.1:8000');
+  const [baseUrl, setBaseUrl] = useState(DEFAULT_API_BASE_URL);
   const [lastResponse, setLastResponse] = useState<ApiResponseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);

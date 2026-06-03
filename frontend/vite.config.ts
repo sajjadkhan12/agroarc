@@ -11,16 +11,13 @@ export default defineConfig(({ mode }) => {
         proxy: {
           // Proxy API requests to backend to avoid CORS issues during development
           '/api': {
-            target: env.VITE_API_BASE_URL || 'http://127.0.0.1:8000',
+            target: env.VITE_API_BASE_URL || 'http://localhost:8000',
             changeOrigin: true,
             secure: false,
           }
         }
       },
       plugins: [react()],
-      define: {
-        'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || 'http://127.0.0.1:8000')
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

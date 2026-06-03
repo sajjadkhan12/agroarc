@@ -4,8 +4,8 @@ Endpoints for crop prediction based on soil nutrients and environmental conditio
 """
 
 from fastapi import APIRouter, HTTPException, status
-import pandas as pd
 import logging
+import numpy as np
 
 # Import schemas from core
 from ..core.schemas import CropRequest, CropResponse
@@ -61,7 +61,7 @@ async def predict_crop(request: CropRequest) -> CropResponse:
     
     Process:
     1. Validate input using CropRequest schema
-    2. Create pandas DataFrame with exact feature order
+    2. Build feature vector in exact training order
     3. Predict using pre-trained RandomForest model
     4. Get prediction probability for confidence score
     5. Decode predicted class to crop name using LabelEncoder
@@ -89,21 +89,21 @@ async def predict_crop(request: CropRequest) -> CropResponse:
             'rainfall': request.rainfall
         }
         
-        # Step 2: Create pandas DataFrame with exact feature names and order
-        # This matches the training data structure
-        df = pd.DataFrame([features_dict])
+        # Step 2: Feature vector in training order (matches scaler / model)
+        feature_order = [
+            "N", "P", "K", "temperature", "humidity", "ph", "rainfall"
+        ]
+        model_input = np.array(
+            [[features_dict[name] for name in feature_order]], dtype=np.float64
+        )
 
         logger.debug(f"Input features: {features_dict}")
-        logger.debug(f"DataFrame columns: {df.columns.tolist()}")
 
         # Step 2b: Apply the exact StandardScaler that was fit during training.
-        # The model was trained on scaled inputs; feeding raw values causes
-        # the model to collapse to a single class for every request.
         if crop_feature_scaler is not None:
-            model_input = crop_feature_scaler.transform(df)
+            model_input = crop_feature_scaler.transform(model_input)
         else:
             logger.warning("Crop scaler not loaded; predicting on raw features.")
-            model_input = df
 
         # Step 3: Make prediction using the pre-trained model
         # Returns array of predicted class (encoded integer)

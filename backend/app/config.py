@@ -3,10 +3,13 @@ Configuration settings for AgroArc Backend
 Load environment variables and app settings
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 import os
 from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -21,7 +24,13 @@ class Settings(BaseSettings):
     
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
+    DEBUG: bool = (
+        os.getenv(
+            "DEBUG",
+            "false" if os.getenv("ENVIRONMENT", "development") == "production" else "true",
+        ).lower()
+        == "true"
+    )
     
     # API Keys
     OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
@@ -41,10 +50,12 @@ class Settings(BaseSettings):
         "http://127.0.0.1",
         "http://127.0.0.1:3000",
     ]
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        case_sensitive=True,
+        extra="ignore",
+    )
 
 
 @lru_cache()

@@ -37,6 +37,8 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Build production bundle
+        env:
+          VITE_API_BASE_URL: http://localhost:8000
         run: npx vite build
 
       - name: Upload build artifact

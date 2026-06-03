@@ -3,6 +3,10 @@ AgroArc FastAPI Backend Application
 Main entry point for the API server
 """
 
+from .env_loader import load_backend_env
+
+load_backend_env()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging

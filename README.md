@@ -315,6 +315,67 @@ RandomForestClassifier(
 
 ## 🚀 Deployment
 
+### Docker (local demo)
+
+1. Copy API keys into a local env file (never commit this):
+
+```bash
+cp backend/.env.example backend/.env
+# Edit backend/.env: OPENWEATHER_API_KEY, GEMINI_API_KEY
+```
+
+2. Build and run with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API docs: http://localhost:8000/docs
+
+**Environment variables**
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `OPENWEATHER_API_KEY` | `backend/.env` or shell | Weather advisory API |
+| `GEMINI_API_KEY` | `backend/.env` or shell | Chat endpoint |
+| `GEMINI_MODEL` | optional | Defaults to `gemini-2.5-flash` |
+| `VITE_API_BASE_URL` | build arg / shell | Frontend backend URL (default `http://localhost:8000`) |
+
+Compose sets `ENVIRONMENT=production` and `DEBUG=false` for containers. The frontend waits until the backend healthcheck passes before starting.
+
+Compose loads `backend/.env` via `env_file` (variables are injected into the container; the file is not baked into the image).
+
+### GitHub Actions secrets (CI)
+
+For the Docker Compose E2E job on `main`, add these **repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `OPENWEATHER_API_KEY` | Yes (for weather tests) | Used when generating `backend/.env` on the runner |
+| `GEMINI_API_KEY` | Yes (for chat tests) | Same |
+| `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` if unset |
+
+CI runs `scripts/generate-backend-env.sh` to create `backend/.env` on the runner from those secrets, then `docker compose up` loads it via `env_file`.
+
+### Pull CI-built images from GHCR
+
+Every merge to `main` publishes images to GitHub Container Registry:
+
+- `ghcr.io/<owner>/<repo>/agroarc-backend:main`
+- `ghcr.io/<owner>/<repo>/agroarc-frontend:main`
+
+To run published images on another machine:
+
+```bash
+export GHCR_REPO=danyalejaz/agroarc_fyp   # replace with your GitHub owner/repo
+echo $GITHUB_PAT | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up --no-build
+```
+
+Use a GitHub personal access token with `read:packages` for `docker login`. Package visibility must allow your account to pull (public packages pull without auth).
+
 ### Backend Integration
 
 Models are saved as pickle files ready for deployment:

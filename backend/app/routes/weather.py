@@ -6,14 +6,10 @@ Provides weather data and farming advisories using OpenWeatherMap API
 from fastapi import APIRouter, HTTPException, status, Query
 import httpx
 import os
-from dotenv import load_dotenv
 import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Get OpenWeather API key from environment
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")

@@ -4,8 +4,8 @@ Endpoints for fertilizer prediction based on soil nutrients and conditions
 """
 
 from fastapi import APIRouter, HTTPException, status
-import pandas as pd
 import logging
+import numpy as np
 
 # Import schemas from core
 from ..core.schemas import FertilizerRequest, FertilizerResponse
@@ -64,7 +64,7 @@ async def recommend_fertilizer(request: FertilizerRequest) -> FertilizerResponse
     Process:
     1. Validate input using FertilizerRequest schema
     2. Encode categorical variables (Soil_Type, Crop_Type)
-    3. Create pandas DataFrame with exact feature order
+    3. Build feature vector in exact training order
     4. Predict using pre-trained RandomForest model
     5. Get prediction probability for confidence score
     6. Decode predicted class to fertilizer name using LabelEncoder
@@ -127,31 +127,27 @@ async def recommend_fertilizer(request: FertilizerRequest) -> FertilizerResponse
             'Phosphorous': request.Phosphorous  # Note: capital 'P' - not 'phosphorous'
         }
         
-        # Step 6: Create pandas DataFrame with EXACT columns the model was trained with
-        # IMPORTANT: The model was trained with ONLY these 5 features (not N-P-K!)
-        # Feature names from model.feature_names_in_: ['Temparature', 'Humidity ', 'Moisture', 'Soil Type', 'Crop Type']
-        
+        # Step 6: Feature vector in the same column order the model was trained with
         input_data = {
-            'Temparature': request.Temperature,
-            'Humidity ': request.Humidity,
-            'Moisture': request.Moisture,
-            'Soil Type': soil_type_encoded,
-            'Crop Type': crop_type_encoded
+            "Temparature": request.Temperature,
+            "Humidity ": request.Humidity,
+            "Moisture": request.Moisture,
+            "Soil Type": soil_type_encoded,
+            "Crop Type": crop_type_encoded,
         }
-        
-        # Create DataFrame with ONLY these 5 features
-        df = pd.DataFrame([input_data])
-        
-        logger.debug(f"DataFrame columns: {df.columns.tolist()}")
-        logger.debug(f"DataFrame:\n{df}")
-        
+        feature_names = list(fert_model.feature_names_in_)
+        model_input = np.array(
+            [[input_data[name] for name in feature_names]], dtype=np.float64
+        )
+
+        logger.debug(f"Model features: {feature_names}")
+        logger.debug(f"Model input: {model_input}")
+
         # Step 7: Make prediction using the pre-trained model
-        # Returns array of predicted class (encoded integer)
-        prediction_encoded = fert_model.predict(df)[0]
-        
+        prediction_encoded = fert_model.predict(model_input)[0]
+
         # Step 8: Get prediction probabilities for confidence score
-        # predict_proba returns probabilities for all classes
-        prediction_proba = fert_model.predict_proba(df)[0]
+        prediction_proba = fert_model.predict_proba(model_input)[0]
         
         # Get the highest probability (confidence) and convert to percentage
         confidence = float(max(prediction_proba)) * 100
