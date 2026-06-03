@@ -1,0 +1,72 @@
+# Run pre-built images from GitHub Container Registry (CI publishes on push to main).
+#
+# Prerequisites:
+#   1. A successful CI run on main (images must exist).
+#      Check: https://github.com/sajjadkhan12/agroarc/pkgs/container/agroarc-backend
+#   2. Packages set to Public (repo public != package public). CI does this on push.
+#   3. Optional API keys: cp backend/.env.example backend/.env
+#
+# If you see "error from registry: denied" on PUBLIC packages, clear stale login first:
+#   docker logout ghcr.io
+#   docker compose -f docker-compose.ghcr.yml pull
+#
+# Only log in if packages are private:
+#   echo YOUR_GITHUB_PAT | docker login ghcr.io -u sajjadkhan12 --password-stdin
+#
+# Usage:
+#   docker compose -f docker-compose.ghcr.yml pull
+#   docker compose -f docker-compose.ghcr.yml up -d
+#
+# Open http://localhost:3000 (frontend) and http://localhost:8000/docs (API).
+
+services:
+  backend:
+    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-backend:${IMAGE_TAG:-main}
+    container_name: agroarc-backend
+    restart: unless-stopped
+    pull_policy: always
+    env_file:
+      - path: backend/.env
+        required: false
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - agroarc
+
+  frontend:
+    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-frontend:${IMAGE_TAG:-main}
+    container_name: agroarc-frontend
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - agroarc
+
+networks:
+  agroarc:
+    driver: bridge

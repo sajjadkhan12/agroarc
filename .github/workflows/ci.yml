@@ -101,7 +101,10 @@ jobs:
           load: true
           tags: |
             ghcr.io/${{ github.repository }}/agroarc-backend:main
+            ghcr.io/${{ github.repository }}/agroarc-backend:latest
             ghcr.io/${{ github.repository }}/agroarc-backend:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
@@ -153,9 +156,37 @@ jobs:
           load: true
           tags: |
             ghcr.io/${{ github.repository }}/agroarc-frontend:main
+            ghcr.io/${{ github.repository }}/agroarc-frontend:latest
             ghcr.io/${{ github.repository }}/agroarc-frontend:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Set GHCR package visibility to public
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const names = [
+              'agroarc-backend',
+              'agroarc-frontend',
+              'agroarc/agroarc-backend',
+              'agroarc/agroarc-frontend',
+            ];
+            for (const package_name of names) {
+              try {
+                await github.rest.packages.setPackageVisibilityForAuthenticatedUser({
+                  package_type: 'container',
+                  package_name,
+                  visibility: 'public',
+                });
+                core.info(`Public: ${package_name}`);
+              } catch (error) {
+                core.warning(`${package_name}: ${error.message}`);
+              }
+            }
 
       - name: Smoke test frontend
         run: |
