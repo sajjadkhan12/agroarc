@@ -1,31 +1,23 @@
-# Run pre-built images from GitHub Container Registry (CI publishes on push to main).
+# Run pre-built images from GitHub Container Registry (CI publishes linux/amd64 on main).
+#
+# Apple Silicon (M1/M2/M3): use platform linux/amd64 below (Docker Desktop emulates it).
 #
 # Prerequisites:
-#   1. A successful CI run on main (images must exist).
-#      Check: https://github.com/sajjadkhan12/agroarc/pkgs/container/agroarc-backend
-#   2. Packages set to Public (repo public != package public). CI does this on push.
-#   3. Optional API keys: cp backend/.env.example backend/.env
+#   1. Successful CI on main: https://github.com/sajjadkhan12/agroarc/actions
+#   2. Packages public: https://github.com/sajjadkhan12/agroarc/pkgs/container/agroarc-backend
+#   3. Optional: cp backend/.env.example backend/.env
 #
-# If you see "error from registry: denied" on PUBLIC packages, clear stale login first:
+# If pull fails with "denied" on public packages:
 #   docker logout ghcr.io
-#   docker compose -f docker-compose.ghcr.yml pull
-#
-# Only log in if packages are private:
-#   echo YOUR_GITHUB_PAT | docker login ghcr.io -u sajjadkhan12 --password-stdin
-#
-# Apple Silicon (M1/M2/M3): images are built for arm64 + amd64 after CI runs on main.
-# If pull fails with "no matching manifest for linux/arm64", wait for a fresh CI push or run:
-#   DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f docker-compose.ghcr.yml up -d
 #
 # Usage:
 #   docker compose -f docker-compose.ghcr.yml pull
 #   docker compose -f docker-compose.ghcr.yml up -d
-#
-# Open http://localhost:3000 (frontend) and http://localhost:8000/docs (API).
 
 services:
   backend:
     image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-backend:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     container_name: agroarc-backend
     restart: unless-stopped
     pull_policy: always
@@ -54,6 +46,7 @@ services:
 
   frontend:
     image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-frontend:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     container_name: agroarc-frontend
     restart: unless-stopped
     pull_policy: always
