@@ -13,6 +13,10 @@
 # Only log in if packages are private:
 #   echo YOUR_GITHUB_PAT | docker login ghcr.io -u sajjadkhan12 --password-stdin
 #
+# Apple Silicon (M1/M2/M3): images are built for arm64 + amd64 after CI runs on main.
+# If pull fails with "no matching manifest for linux/arm64", wait for a fresh CI push or run:
+#   DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f docker-compose.ghcr.yml up -d
+#
 # Usage:
 #   docker compose -f docker-compose.ghcr.yml pull
 #   docker compose -f docker-compose.ghcr.yml up -d
@@ -21,7 +25,7 @@
 
 services:
   backend:
-    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-backend:${IMAGE_TAG:-main}
+    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-backend:${IMAGE_TAG:-latest}
     container_name: agroarc-backend
     restart: unless-stopped
     pull_policy: always
@@ -49,7 +53,7 @@ services:
       - agroarc
 
   frontend:
-    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-frontend:${IMAGE_TAG:-main}
+    image: ghcr.io/${GHCR_REPO:-sajjadkhan12/agroarc}/agroarc-frontend:${IMAGE_TAG:-latest}
     container_name: agroarc-frontend
     restart: unless-stopped
     pull_policy: always

@@ -69,6 +69,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=moby/buildkit:latest
 
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main'
@@ -97,8 +99,8 @@ jobs:
         with:
           context: .
           file: backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
-          load: true
           tags: |
             ghcr.io/${{ github.repository }}/agroarc-backend:main
             ghcr.io/${{ github.repository }}/agroarc-backend:latest
@@ -112,10 +114,13 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             IMAGE="ghcr.io/${{ github.repository }}/agroarc-backend:main"
+            PLATFORM="--platform linux/amd64"
+            docker pull $PLATFORM "$IMAGE"
           else
             IMAGE="agroarc-backend:ci"
+            PLATFORM=""
           fi
-          docker run -d --name agroarc-backend-ci -p 8000:8000 "$IMAGE"
+          docker run -d $PLATFORM --name agroarc-backend-ci -p 8000:8000 "$IMAGE"
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:8000/ > /dev/null \
               && curl -fsS http://127.0.0.1:8000/api/v1/crop/health > /dev/null; then
@@ -152,8 +157,8 @@ jobs:
           context: ./frontend
           file: frontend/Dockerfile
           build-args: VITE_API_BASE_URL=http://localhost:8000
+          platforms: linux/amd64,linux/arm64
           push: true
-          load: true
           tags: |
             ghcr.io/${{ github.repository }}/agroarc-frontend:main
             ghcr.io/${{ github.repository }}/agroarc-frontend:latest
@@ -192,10 +197,13 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             IMAGE="ghcr.io/${{ github.repository }}/agroarc-frontend:main"
+            PLATFORM="--platform linux/amd64"
+            docker pull $PLATFORM "$IMAGE"
           else
             IMAGE="agroarc-frontend:ci"
+            PLATFORM=""
           fi
-          docker run -d --name agroarc-frontend-ci -p 3000:80 "$IMAGE"
+          docker run -d $PLATFORM --name agroarc-frontend-ci -p 3000:80 "$IMAGE"
           for i in {1..15}; do
             status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/healthz || echo "000")
             if [ "$status" = "200" ]; then
