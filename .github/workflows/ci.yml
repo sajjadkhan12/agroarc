@@ -187,7 +187,13 @@ jobs:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
-        run: chmod +x scripts/generate-backend-env.sh && ./scripts/generate-backend-env.sh
+        run: |
+          cat > backend/.env <<EOF
+          OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
+          GEMINI_API_KEY=${GEMINI_API_KEY:-}
+          GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+          EOF
+          chmod 600 backend/.env
 
       - name: Compose smoke test
         if: github.ref == 'refs/heads/main'

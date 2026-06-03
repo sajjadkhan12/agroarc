@@ -357,7 +357,7 @@ For the Docker Compose E2E job on `main`, add these **repository secrets** (Sett
 | `GEMINI_API_KEY` | Yes (for chat tests) | Same |
 | `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` if unset |
 
-CI runs `scripts/generate-backend-env.sh` to create `backend/.env` on the runner from those secrets, then `docker compose up` loads it via `env_file`.
+CI creates `backend/.env` on the runner from those secrets, then `docker compose up` loads it via `env_file`. Locally you can use `scripts/generate-backend-env.sh` the same way.
 
 ### Pull CI-built images from GHCR
 
